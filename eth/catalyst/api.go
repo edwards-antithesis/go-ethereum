@@ -429,6 +429,31 @@ func mutateExecutableData(data *beacon.ExecutableDataV1) *beacon.ExecutableDataV
 	case 14:
 		data.BlockHash = weirdHash(data, data.BlockHash)
 	}
+	if rand.Int()%2 == 0 {
+		// Set correct blockhash in 50% of cases
+		txs, _ := decodeTransactions(data.Transactions)
+		number := big.NewInt(0)
+		number.SetUint64(data.Number)
+		header := &types.Header{
+			ParentHash:  data.ParentHash,
+			UncleHash:   types.EmptyUncleHash,
+			Coinbase:    data.FeeRecipient,
+			Root:        data.StateRoot,
+			TxHash:      types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil)),
+			ReceiptHash: data.ReceiptsRoot,
+			Bloom:       types.BytesToBloom(data.LogsBloom),
+			Difficulty:  common.Big0,
+			Number:      number,
+			GasLimit:    data.GasLimit,
+			GasUsed:     data.GasUsed,
+			Time:        data.Timestamp,
+			BaseFee:     data.BaseFeePerGas,
+			Extra:       data.ExtraData,
+			MixDigest:   data.Random,
+		}
+		block := types.NewBlockWithHeader(header).WithBody(txs, nil /* uncles */)
+		data.BlockHash = block.Hash()
+	}
 	return data
 }
 
