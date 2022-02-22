@@ -26,16 +26,19 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/MariusVanDerWijden/FuzzyVM/filler"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/beacon"
 	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/eth"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
+	txfuzz "github.com/mariusvanderwijden/tx-fuzz"
 )
 
 // Register adds catalyst APIs to the full node.
@@ -446,6 +449,7 @@ func mutateExecutableData(data *beacon.ExecutableDataV1, eth *eth.Ethereum) *bea
 	if rand.Int()%2 == 0 {
 		// Set correct blockhash in 50% of cases
 		txs, _ := decodeTransactions(data.Transactions)
+		txs, txhash := mutateTransactions(txs)
 		number := big.NewInt(0)
 		number.SetUint64(data.Number)
 		header := &types.Header{
@@ -453,7 +457,7 @@ func mutateExecutableData(data *beacon.ExecutableDataV1, eth *eth.Ethereum) *bea
 			UncleHash:   types.EmptyUncleHash,
 			Coinbase:    data.FeeRecipient,
 			Root:        data.StateRoot,
-			TxHash:      types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil)),
+			TxHash:      txhash,
 			ReceiptHash: data.ReceiptsRoot,
 			Bloom:       types.BytesToBloom(data.LogsBloom),
 			Difficulty:  common.Big0,
@@ -488,4 +492,41 @@ func (api *ConsensusAPI) insertTransactions(txs types.Transactions) error {
 		api.eth.TxPool().AddLocal(tx)
 	}
 	return nil
+}
+
+func mutateTransactions(txs []*types.Transaction) ([]*types.Transaction, common.Hash) {
+	txhash := types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
+	rnd := rand.Int()
+	switch rnd % 20 {
+	case 1:
+		// duplicate a txs
+		tx := txs[rand.Intn(len(txs))]
+		txs = append(txs, tx)
+	case 2:
+		// replace a tx
+		index := rand.Intn(len(txs))
+		b := make([]byte, 200)
+		rand.Read(b)
+		tx, err := txfuzz.RandomTx(filler.NewFiller(b))
+		if err != nil {
+			fmt.Println(err)
+		}
+		if rand.Int()%2 == 0 {
+			txs[index] = tx
+		} else {
+			key := "0xaf5ead4413ff4b78bc94191a2926ae9ccbec86ce099d65aaf469e9eb1a0fa87f"
+			sk := crypto.ToECDSAUnsafe(common.FromHex(key))
+			chainid := big.NewInt(0x146998)
+			signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainid), sk)
+			if err != nil {
+				panic(err)
+			}
+			txs[index] = signedTx
+		}
+	}
+	if rand.Int()%20 > 17 {
+		// Recompute correct txhash in most cases
+		txhash = types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
+	}
+	return txs, txhash
 }
