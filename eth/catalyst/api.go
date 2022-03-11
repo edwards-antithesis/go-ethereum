@@ -18,6 +18,7 @@
 package catalyst
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"
@@ -353,7 +354,7 @@ func (api *ConsensusAPI) assembleBlock(parentHash common.Hash, params *beacon.Pa
 	if err != nil {
 		return nil, err
 	}
-	return mutateExecutableData(beacon.BlockToExecutableData(block), api.eth), nil
+	return api.mutateExecutableData(beacon.BlockToExecutableData(block)), nil
 }
 
 func weirdHash(data *beacon.ExecutableDataV1, hashes ...common.Hash) common.Hash {
@@ -403,16 +404,16 @@ func weirdNumber(data *beacon.ExecutableDataV1, number uint64) uint64 {
 	}
 }
 
-func mutateExecutableData(data *beacon.ExecutableDataV1, eth *eth.Ethereum) *beacon.ExecutableDataV1 {
+func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *beacon.ExecutableDataV1 {
 	hashes := []common.Hash{
 		data.BlockHash,
 		data.ParentHash,
-		eth.BlockChain().GetCanonicalHash(0),
-		eth.BlockChain().GetCanonicalHash(data.Number - 255),
-		eth.BlockChain().GetCanonicalHash(data.Number - 256),
-		eth.BlockChain().GetCanonicalHash(data.Number - 257),
-		eth.BlockChain().GetCanonicalHash(data.Number - 1000),
-		eth.BlockChain().GetCanonicalHash(data.Number - 90001),
+		api.eth.BlockChain().GetCanonicalHash(0),
+		api.eth.BlockChain().GetCanonicalHash(data.Number - 255),
+		api.eth.BlockChain().GetCanonicalHash(data.Number - 256),
+		api.eth.BlockChain().GetCanonicalHash(data.Number - 257),
+		api.eth.BlockChain().GetCanonicalHash(data.Number - 1000),
+		api.eth.BlockChain().GetCanonicalHash(data.Number - 90001),
 	}
 	rnd := rand.Int()
 	switch rnd % 15 {
@@ -449,7 +450,7 @@ func mutateExecutableData(data *beacon.ExecutableDataV1, eth *eth.Ethereum) *bea
 	if rand.Int()%2 == 0 {
 		// Set correct blockhash in 50% of cases
 		txs, _ := decodeTransactions(data.Transactions)
-		txs, txhash := mutateTransactions(txs)
+		txs, txhash := api.mutateTransactions(txs)
 		number := big.NewInt(0)
 		number.SetUint64(data.Number)
 		header := &types.Header{
@@ -494,7 +495,7 @@ func (api *ConsensusAPI) insertTransactions(txs types.Transactions) error {
 	return nil
 }
 
-func mutateTransactions(txs []*types.Transaction) ([]*types.Transaction, common.Hash) {
+func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.Transaction, common.Hash) {
 	txhash := types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
 	rnd := rand.Int()
 	switch rnd % 20 {
@@ -523,10 +524,47 @@ func mutateTransactions(txs []*types.Transaction) ([]*types.Transaction, common.
 			}
 			txs[index] = signedTx
 		}
+	case 3:
+		// Add a huuuge transaction
+		gasLimit := uint64(7_800_000)
+		code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x00, 0xf3}
+		bigSlice := make([]byte, randomSize())
+		code = append(code, bigSlice...)
+		nonce, err := api.eth.APIBackend.GetPoolNonce(context.Background(), common.HexToAddress("0xb02A2EdA1b317FBd16760128836B0Ac59B560e9D"))
+		if err != nil {
+			panic(err)
+		}
+		gasPrice, err := api.eth.APIBackend.SuggestGasTipCap(context.Background())
+		if err != nil {
+			panic(err)
+		}
+		tx := types.NewContractCreation(nonce, big.NewInt(0), gasLimit, gasPrice, code)
+
+		key := "0xcdfbe6f7602f67a97602e3e9fc24cde1cdffa88acd47745c0b84c5ff55891e1b"
+		sk := crypto.ToECDSAUnsafe(common.FromHex(key))
+		chainid := big.NewInt(0x146998)
+		signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainid), sk)
+		if err != nil {
+			panic(err)
+		}
+		txs = append(txs, signedTx)
 	}
+
 	if rand.Int()%20 > 17 {
 		// Recompute correct txhash in most cases
 		txhash = types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
 	}
 	return txs, txhash
+}
+
+func randomSize() int {
+	rnd := rand.Int31n(100)
+	if rnd < 5 {
+		return int(rand.Int31n(11 * 1024 * 1024))
+	} else if rnd < 10 {
+		return 128*1024 + 1
+	} else if rnd < 20 {
+		return int(rand.Int31n(128 * 1024))
+	}
+	return int(rand.Int31n(127 * 1024))
 }
