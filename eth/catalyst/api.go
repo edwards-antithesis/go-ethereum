@@ -35,6 +35,7 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/trie"
 )
 
 // Register adds catalyst APIs to the full node.
@@ -455,6 +456,17 @@ func mutateExecutableData(data *beacon.ExecutableDataV1) *beacon.ExecutableDataV
 		data.BlockHash = block.Hash()
 	}
 	return data
+}
+func decodeTransactions(enc [][]byte) ([]*types.Transaction, error) {
+	var txs = make([]*types.Transaction, len(enc))
+	for i, encTx := range enc {
+		var tx types.Transaction
+		if err := tx.UnmarshalBinary(encTx); err != nil {
+			return nil, fmt.Errorf("invalid transaction %d: %v", i, err)
+		}
+		txs[i] = &tx
+	}
+	return txs, nil
 }
 
 // Used in tests to add a the list of transactions from a block to the tx pool.
