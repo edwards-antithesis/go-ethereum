@@ -350,7 +350,7 @@ func (api *ConsensusAPI) assembleBlock(parentHash common.Hash, params *beacon.Pa
 	if err != nil {
 		return nil, err
 	}
-	return beacon.BlockToExecutableData(block), nil
+	return mutateExecutableData(beacon.BlockToExecutableData(block)), nil
 }
 
 func weirdHash(data *beacon.ExecutableDataV1, hash common.Hash) common.Hash {
