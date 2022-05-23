@@ -24,8 +24,9 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 	"time"
+
+	antithesis "antithesis.com/go/rand-source"
 
 	"github.com/MariusVanDerWijden/FuzzyVM/filler"
 	"github.com/ethereum/go-ethereum/common"
@@ -358,49 +359,70 @@ func (api *ConsensusAPI) assembleBlock(parentHash common.Hash, params *beacon.Pa
 }
 
 func weirdHash(data *beacon.ExecutableDataV1, hashes ...common.Hash) common.Hash {
+	rand := antithesis.NewSource()
 	rnd := rand.Int()
 	switch rnd % 10 {
 	case 0:
+		log.Info("Using common.Hash", "rnd", rnd)
 		return common.Hash{}
 	case 1:
+		log.Info("Using data.BlockHash", "rnd", rnd)
 		return data.BlockHash
 	case 2:
+		log.Info("Using data.ParentHash", "rnd", rnd)
 		return data.ParentHash
 	case 3:
+		log.Info("Using data.StateRoot", "rnd", rnd)
 		return data.StateRoot
 	case 4:
+		log.Info("Using data.ReceiptRoot", "rnd", rnd)
 		return data.ReceiptsRoot
 	case 5:
+		log.Info("Using data.Random", "rnd", rnd)
 		return data.Random
 	case 6:
-		return hashes[rand.Int31n(int32(len(hashes)))]
+		hash := hashes[rand.Int31n(int32(len(hashes)))]
+		log.Info("Using random hash", "rnd", rnd)
+		return hash
 	default:
+
 		hash := hashes[rand.Int31n(int32(len(hashes)))]
 		newBytes := hash.Bytes()
 		index := rand.Int31n(int32(len(newBytes)))
 		i := rand.Int31n(8)
+		log.Info("Using hash mixing", "rnd", rnd, "index", index)
 		newBytes[index] = newBytes[index] ^ 1<<i
 		return common.BytesToHash(newBytes)
 	}
 }
 
 func weirdNumber(data *beacon.ExecutableDataV1, number uint64) uint64 {
+	rand := antithesis.NewSource()
 	rnd := rand.Int()
 	switch rnd % 7 {
 	case 0:
+		log.Info("Returning 0", "rnd", rnd)
 		return 0
 	case 1:
+		log.Info("Returning 1", "rnd", rnd)
 		return 1
 	case 2:
-		return rand.Uint64()
+		r := rand.Uint64()
+		log.Info("Returning random value", "rnd", rnd, "r", r)
+		return r
 	case 3:
+		log.Info("Returning UINT64_MAX", "rnd", rnd)
 		return ^uint64(0)
 	case 4:
+		log.Info("Returning increment", "rnd", rnd, "number", number)
 		return number + 1
 	case 5:
+		log.Info("Returning decrement", "rnd", rnd, "number", number)
 		return number - 1
 	default:
-		return number + uint64(rand.Int63n(100000))
+		r := uint64(rand.Int63n(100000))
+		log.Info("Returning random increment", "rnd", rnd, "number", number, "r", r)
+		return number + r
 	}
 }
 
@@ -415,39 +437,55 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 		api.eth.BlockChain().GetCanonicalHash(data.Number - 1000),
 		api.eth.BlockChain().GetCanonicalHash(data.Number - 90001),
 	}
+	rand := antithesis.NewSource()
 	rnd := rand.Int()
 	switch rnd % 15 {
 	case 1:
+		log.Info("Mutating data.BlockHash", "rnd", rnd)
 		data.BlockHash = weirdHash(data, hashes...)
 	case 2:
+		log.Info("Mutating data.ParentHash", "rnd", rnd)
 		data.ParentHash = weirdHash(data, hashes...)
 	case 3:
+		log.Info("Mutating data.FeeRecipient", "rnd", rnd)
 		data.FeeRecipient = common.Address{}
 	case 4:
+		log.Info("Mutating data.StateRoot", "rnd", rnd)
 		data.StateRoot = weirdHash(data, data.StateRoot)
 	case 5:
+		log.Info("Mutating data.ReceiptsRoot", "rnd", rnd)
 		data.ReceiptsRoot = weirdHash(data, data.ReceiptsRoot)
 	case 6:
+		log.Info("Mutating data.LogsBloom", "rnd", rnd)
 		data.LogsBloom = make([]byte, 0)
 	case 7:
+		log.Info("Mutating data.Random", "rnd", rnd)
 		data.Random = weirdHash(data, data.Random)
 	case 8:
+		log.Info("Mutating data.Number", "rnd", rnd)
 		data.Number = weirdNumber(data, data.Number)
 	case 9:
+		log.Info("Mutating data.GasLimit", "rnd", rnd)
 		data.GasLimit = weirdNumber(data, data.GasLimit)
 	case 10:
+		log.Info("Mutating data.GasUsed", "rnd", rnd)
 		data.GasUsed = weirdNumber(data, data.GasUsed)
 	case 11:
+		log.Info("Mutating data.Timestamp", "rnd", rnd)
 		data.Timestamp = weirdNumber(data, data.Timestamp)
 	case 12:
+		log.Info("Mutating data.ExtraData", "rnd", rnd)
 		hash := weirdHash(data, common.Hash{})
 		data.ExtraData = hash[:]
 	case 13:
+		log.Info("Mutating data.BaseFeePerGas", "rnd", rnd)
 		data.BaseFeePerGas = big.NewInt(int64(weirdNumber(data, data.BaseFeePerGas.Uint64())))
 	case 14:
+		log.Info("Mutating data.BlockHash", "rnd", rnd)
 		data.BlockHash = weirdHash(data, data.BlockHash)
 	}
 	if rand.Int()%2 == 0 {
+		log.Info("Using correct blockhash")
 		// Set correct blockhash in 50% of cases
 		txs, _ := decodeTransactions(data.Transactions)
 		txs, txhash := api.mutateTransactions(txs)
@@ -497,15 +535,19 @@ func (api *ConsensusAPI) insertTransactions(txs types.Transactions) error {
 
 func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.Transaction, common.Hash) {
 	txhash := types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
+	rand := antithesis.NewSource()
 	rnd := rand.Int()
 	switch rnd % 20 {
 	case 1:
 		// duplicate a txs
-		tx := txs[rand.Intn(len(txs))]
+		i := rand.Intn(len(txs))
+		log.Info("Duplicating transaction", "rnd", rnd, "i", i)
+		tx := txs[i]
 		txs = append(txs, tx)
 	case 2:
 		// replace a tx
 		index := rand.Intn(len(txs))
+		log.Info("Replacing transaction", "rnd", rnd, "i", index)
 		b := make([]byte, 200)
 		rand.Read(b)
 		tx, err := txfuzz.RandomTx(filler.NewFiller(b))
@@ -526,6 +568,7 @@ func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.
 		}
 	case 3:
 		// Add a huuuge transaction
+		log.Info("Adding a huuge transaction", "rnd", rnd)
 		gasLimit := uint64(7_800_000)
 		code := []byte{0x60, 0x00, 0x60, 0x00, 0x60, 0x00, 0xf3}
 		bigSlice := make([]byte, randomSize())
@@ -552,12 +595,14 @@ func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.
 
 	if rand.Int()%20 > 17 {
 		// Recompute correct txhash in most cases
+		log.Info("Recomputing correct txhash", "rnd")
 		txhash = types.DeriveSha(types.Transactions(txs), trie.NewStackTrie(nil))
 	}
 	return txs, txhash
 }
 
 func randomSize() int {
+	rand := antithesis.NewSource()
 	rnd := rand.Int31n(100)
 	if rnd < 5 {
 		return int(rand.Int31n(11 * 1024 * 1024))

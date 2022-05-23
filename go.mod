@@ -3,6 +3,7 @@ module github.com/ethereum/go-ethereum
 go 1.15
 
 require (
+	antithesis.com/go/rand-source v1.0.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/MariusVanDerWijden/FuzzyVM v0.0.0-20220105083840-0d38b531cd4b
 	github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442 // indirect
@@ -11,6 +12,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.1.1
 	github.com/aws/aws-sdk-go-v2/credentials v1.1.1
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1
+	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcd/btcec/v2 v2.1.3
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
 	github.com/cespare/cp v0.1.0
@@ -46,7 +48,7 @@ require (
 	github.com/karalabe/usb v0.0.2
 	github.com/kevinburke/go-bindata v3.23.0+incompatible
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/mariusvanderwijden/tx-fuzz v0.0.0-20220222104514-79320b80893a
+	github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442
 	github.com/mattn/go-colorable v0.1.8
 	github.com/mattn/go-isatty v0.0.12
 	github.com/naoina/toml v0.1.2-0.20170918210437-9fafd6967416
@@ -71,3 +73,5 @@ require (
 	gopkg.in/olebedev/go-duktape.v3 v3.0.0-20200619000410-60c24ae608a6
 	gopkg.in/urfave/cli.v1 v1.20.0
 )
+
+replace antithesis.com/go/rand-source => ./antithesis/rand-source
