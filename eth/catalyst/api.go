@@ -40,7 +40,7 @@ import (
 	"github.com/ethereum/go-ethereum/node"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/ethereum/go-ethereum/trie"
-	txfuzz "github.com/mariusvanderwijden/tx-fuzz"
+	txfuzz "github.com/MariusVanDerWijden/tx-fuzz"
 )
 
 // Register adds catalyst APIs to the full node.
