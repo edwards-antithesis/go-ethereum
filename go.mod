@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/MariusVanDerWijden/FuzzyVM v0.0.0-20220105083840-0d38b531cd4b
+	github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0
 	github.com/aws/aws-sdk-go-v2 v1.2.0
 	github.com/aws/aws-sdk-go-v2/config v1.1.1
@@ -12,7 +13,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.1.1
 	github.com/btcsuite/btcd/btcec/v2 v2.1.3
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.1 // indirect
-	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/cespare/cp v0.1.0
 	github.com/cloudflare/cloudflare-go v0.14.0
 	github.com/consensys/gnark-crypto v0.4.1-0.20210426202927-39ac3d4b3f1f
@@ -60,9 +60,8 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tyler-smith/go-bip39 v1.0.1-0.20181017060643-dbb3b84ba2ef
-	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
-	golang.org/x/mobile v0.0.0-20190719004257-d2bd2a29d028
 	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
+	golang.org/x/mobile v0.0.0-20200801112145-973feb4309de
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20211214234402-4825e8c3871d
 	golang.org/x/text v0.3.7
