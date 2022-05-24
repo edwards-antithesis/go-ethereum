@@ -404,6 +404,24 @@ func weirdNumber(data *beacon.ExecutableDataV1, number uint64) uint64 {
 	}
 }
 
+func weirdByteSlice(data []byte) []byte {
+	rnd := rand.Int()
+	switch rnd % 4 {
+	case 0:
+		return make([]byte, 0)
+	case 1:
+		return make([]byte, 257)
+	case 2:
+		return []byte{1, 2}
+	case 3:
+		slice := make([]byte, len(data))
+		rand.Read(slice)
+		return slice
+	default:
+		return data
+	}
+}
+
 func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *beacon.ExecutableDataV1 {
 	hashes := []common.Hash{
 		data.BlockHash,
@@ -415,6 +433,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 		api.eth.BlockChain().GetCanonicalHash(data.Number - 1000),
 		api.eth.BlockChain().GetCanonicalHash(data.Number - 90001),
 	}
+	bloom := types.BytesToBloom(data.LogsBloom)
 	rnd := rand.Int()
 	switch rnd % 15 {
 	case 1:
@@ -428,7 +447,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 	case 5:
 		data.ReceiptsRoot = weirdHash(data, data.ReceiptsRoot)
 	case 6:
-		data.LogsBloom = make([]byte, 0)
+		bloom = weirdByteSlice(data.LogsBloom)
 	case 7:
 		data.Random = weirdHash(data, data.Random)
 	case 8:
@@ -460,7 +479,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 			Root:        data.StateRoot,
 			TxHash:      txhash,
 			ReceiptHash: data.ReceiptsRoot,
-			Bloom:       types.BytesToBloom(data.LogsBloom),
+			Bloom:       bloom,
 			Difficulty:  common.Big0,
 			Number:      number,
 			GasLimit:    data.GasLimit,
