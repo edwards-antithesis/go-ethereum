@@ -567,6 +567,26 @@ func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.
 			panic(err)
 		}
 		txs = append(txs, signedTx)
+	case 4:
+		// add lots and lots of transactions
+		rounds := rand.Int31n(10000)
+		for i := 0; i < int(rounds); i++ {
+			b := make([]byte, 200)
+			rand.Read(b)
+			tx, err := txfuzz.RandomTx(filler.NewFiller(b))
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			key := "0xaf5ead4413ff4b78bc94191a2926ae9ccbec86ce099d65aaf469e9eb1a0fa87f"
+			sk := crypto.ToECDSAUnsafe(common.FromHex(key))
+			chainid := big.NewInt(0x146998)
+			signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainid), sk)
+			if err != nil {
+				panic(err)
+			}
+			txs = append(txs, signedTx)
+		}
 	}
 
 	if rand.Int()%20 > 17 {
