@@ -149,7 +149,7 @@ func TestLegacyReceiptDecoding(t *testing.T) {
 			if dec.CumulativeGasUsed != receipt.CumulativeGasUsed {
 				t.Fatalf("Receipt CumulativeGasUsed mismatch, want %v, have %v", receipt.CumulativeGasUsed, dec.CumulativeGasUsed)
 			}
-			if dec.Bloom != receipt.Bloom {
+			if !bytes.Equal(dec.Bloom, receipt.Bloom) {
 				t.Fatalf("Bloom data mismatch, want %v, have %v", receipt.Bloom, dec.Bloom)
 			}
 			if len(dec.Logs) != len(receipt.Logs) {

@@ -37,7 +37,7 @@ func TestBloom(t *testing.T) {
 		"lo",
 	}
 
-	var bloom Bloom
+	bloom := NewBloom()
 	for _, data := range positive {
 		bloom.Add([]byte(data))
 	}
@@ -57,7 +57,7 @@ func TestBloom(t *testing.T) {
 // TestBloomExtensively does some more thorough tests
 func TestBloomExtensively(t *testing.T) {
 	var exp = common.HexToHash("c8d3ca65cdb4874300a9e39475508f23ed6da09fdbc487f89a2dcf50b09eb263")
-	var b Bloom
+	b := NewBloom()
 	// Add 100 "random" things
 	for i := 0; i < 100; i++ {
 		data := fmt.Sprintf("xxxxxxxxxx data %d yyyyyyyyyyyyyy", i)
@@ -68,8 +68,8 @@ func TestBloomExtensively(t *testing.T) {
 	if got != exp {
 		t.Errorf("Got %x, exp %x", got, exp)
 	}
-	var b2 Bloom
-	b2.SetBytes(b.Bytes())
+	b2 := NewBloom()
+	copy(b2, b.Bytes())
 	got2 := crypto.Keccak256Hash(b2.Bytes())
 	if got != got2 {
 		t.Errorf("Got %x, exp %x", got, got2)

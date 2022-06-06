@@ -18,7 +18,6 @@ package types
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -38,23 +37,19 @@ const (
 )
 
 // Bloom represents a 2048 bit bloom filter.
-type Bloom [BloomByteLength]byte
+type Bloom []byte
+
+func NewBloom() Bloom {
+	b := make(Bloom, BloomByteLength)
+	return b
+}
 
 // BytesToBloom converts a byte slice to a bloom filter.
 // It panics if b is not of suitable size.
 func BytesToBloom(b []byte) Bloom {
-	var bloom Bloom
-	bloom.SetBytes(b)
+	bloom := NewBloom()
+	copy(bloom, b)
 	return bloom
-}
-
-// SetBytes sets the content of b to the given bytes.
-// It panics if d is not of suitable size.
-func (b *Bloom) SetBytes(d []byte) {
-	if len(b) < len(d) {
-		panic(fmt.Sprintf("bloom bytes too big %d %d", len(b), len(d)))
-	}
-	copy(b[BloomByteLength-len(d):], d)
 }
 
 // Add adds d to the filter. Future calls of Test(d) will return true.
@@ -65,9 +60,9 @@ func (b *Bloom) Add(d []byte) {
 // add is internal version of Add, which takes a scratch buffer for reuse (needs to be at least 6 bytes)
 func (b *Bloom) add(d []byte, buf []byte) {
 	i1, v1, i2, v2, i3, v3 := bloomValues(d, buf)
-	b[i1] |= v1
-	b[i2] |= v2
-	b[i3] |= v3
+	(*b)[i1] |= v1
+	(*b)[i2] |= v2
+	(*b)[i3] |= v3
 }
 
 // Big converts b to a big integer.
@@ -97,13 +92,13 @@ func (b Bloom) MarshalText() ([]byte, error) {
 
 // UnmarshalText b as a hex string with 0x prefix.
 func (b *Bloom) UnmarshalText(input []byte) error {
-	return hexutil.UnmarshalFixedText("Bloom", input, b[:])
+	return hexutil.UnmarshalFixedText("Bloom", input, *b)
 }
 
 // CreateBloom creates a bloom filter out of the give Receipts (+Logs)
 func CreateBloom(receipts Receipts) Bloom {
 	buf := make([]byte, 6)
-	var bin Bloom
+	bin := NewBloom()
 	for _, receipt := range receipts {
 		for _, log := range receipt.Logs {
 			bin.add(log.Address.Bytes(), buf)
@@ -131,7 +126,7 @@ func LogsBloom(logs []*Log) []byte {
 // Bloom9 returns the bloom filter for the given data
 func Bloom9(data []byte) []byte {
 	var b Bloom
-	b.SetBytes(data)
+	copy(b, data)
 	return b.Bytes()
 }
 

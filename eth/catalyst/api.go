@@ -426,6 +426,25 @@ func weirdNumber(data *beacon.ExecutableDataV1, number uint64) uint64 {
 	}
 }
 
+func weirdByteSlice(data []byte) []byte {
+   rand := antithesis.NewSource()
+	rnd := rand.Int()
+	switch rnd % 4 {
+	case 0:
+		return make([]byte, 0)
+	case 1:
+		return make([]byte, 257)
+	case 2:
+		return []byte{1, 2}
+	case 3:
+		slice := make([]byte, len(data))
+		rand.Read(slice)
+		return slice
+	default:
+		return data
+	}
+}
+
 func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *beacon.ExecutableDataV1 {
 	hashes := []common.Hash{
 		data.BlockHash,
@@ -438,6 +457,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 		api.eth.BlockChain().GetCanonicalHash(data.Number - 90001),
 	}
 	rand := antithesis.NewSource()
+	bloom := types.BytesToBloom(data.LogsBloom)
 	rnd := rand.Int()
 	switch rnd % 15 {
 	case 1:
@@ -457,7 +477,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 		data.ReceiptsRoot = weirdHash(data, data.ReceiptsRoot)
 	case 6:
 		log.Info("Mutating data.LogsBloom", "rnd", rnd)
-		data.LogsBloom = make([]byte, 0)
+		bloom = weirdByteSlice(data.LogsBloom)
 	case 7:
 		log.Info("Mutating data.Random", "rnd", rnd)
 		data.Random = weirdHash(data, data.Random)
@@ -498,7 +518,7 @@ func (api *ConsensusAPI) mutateExecutableData(data *beacon.ExecutableDataV1) *be
 			Root:        data.StateRoot,
 			TxHash:      txhash,
 			ReceiptHash: data.ReceiptsRoot,
-			Bloom:       types.BytesToBloom(data.LogsBloom),
+			Bloom:       bloom,
 			Difficulty:  common.Big0,
 			Number:      number,
 			GasLimit:    data.GasLimit,
@@ -591,6 +611,26 @@ func (api *ConsensusAPI) mutateTransactions(txs []*types.Transaction) ([]*types.
 			panic(err)
 		}
 		txs = append(txs, signedTx)
+	case 4:
+		// add lots and lots of transactions
+		rounds := rand.Int31n(10000)
+		for i := 0; i < int(rounds); i++ {
+			b := make([]byte, 200)
+			rand.Read(b)
+			tx, err := txfuzz.RandomTx(filler.NewFiller(b))
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			key := "0xaf5ead4413ff4b78bc94191a2926ae9ccbec86ce099d65aaf469e9eb1a0fa87f"
+			sk := crypto.ToECDSAUnsafe(common.FromHex(key))
+			chainid := big.NewInt(0x146998)
+			signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainid), sk)
+			if err != nil {
+				panic(err)
+			}
+			txs = append(txs, signedTx)
+		}
 	}
 
 	if rand.Int()%20 > 17 {
