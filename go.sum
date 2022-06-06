@@ -48,6 +48,8 @@ github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220421143531-990abc3fe022 h1:jRr4
 github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220421143531-990abc3fe022/go.mod h1:C9h4QFtD/axTvWBeBAy3ApnMRiIXK2Rt0JvkABgd2qI=
 github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442 h1:Ygmn4FEN8UIJkg28MhEzRIIWsnzN0ADPI1oR8pVAHTw=
 github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442/go.mod h1:C9h4QFtD/axTvWBeBAy3ApnMRiIXK2Rt0JvkABgd2qI=
+github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220606131552-9b820ba578f6 h1:QpXhhC+AKqPvVhnHuVeB+0hiLCRua3ul7bI3mEncuf0=
+github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220606131552-9b820ba578f6/go.mod h1:C9h4QFtD/axTvWBeBAy3ApnMRiIXK2Rt0JvkABgd2qI=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/Shopify/sarama v1.26.1/go.mod h1:NbSGBSSndYaIhRcBtY9V0U7AyH+x71bG668AuWys/yU=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=

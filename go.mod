@@ -5,7 +5,7 @@ go 1.15
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v0.3.0
 	github.com/MariusVanDerWijden/FuzzyVM v0.0.0-20220105083840-0d38b531cd4b
-	github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220523111711-bc6d1cb86442 // indirect
+	github.com/MariusVanDerWijden/tx-fuzz v0.0.0-20220606131552-9b820ba578f6 // indirect
 	github.com/VictoriaMetrics/fastcache v1.6.0
 	github.com/aws/aws-sdk-go-v2 v1.2.0
 	github.com/aws/aws-sdk-go-v2/config v1.1.1
